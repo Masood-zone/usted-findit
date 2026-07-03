@@ -63,9 +63,6 @@ jobs:
 
           echo "Required secrets are available"
 
-      - name: Compile Tailwind CSS for bundler compatibility
-        run: node scripts/compile-css.mjs
-
       - name: Publish OTA update
         run: |
           eas update \
