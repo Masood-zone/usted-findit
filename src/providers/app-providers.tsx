@@ -7,7 +7,9 @@ export function AppProviders({ children }: PropsWithChildren) {
   return (
     <SafeAreaProvider>
       <QueryProvider>
-        <NotificationProvider>{children}</NotificationProvider>
+        {/* <NotificationProvider>
+        </NotificationProvider> */}
+        {children}
       </QueryProvider>
     </SafeAreaProvider>
   );
