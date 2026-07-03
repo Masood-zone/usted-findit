@@ -62,6 +62,20 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Check required secrets
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "EXPO_TOKEN is missing or empty"
+            exit 1
+          fi
+
+          if [ -z "$EXPO_PUBLIC_API_URL" ]; then
+            echo "EXPO_PUBLIC_API_URL is missing or empty"
+            exit 1
+          fi
+
+          echo "Required secrets are available"
+
       - name: Start EAS APK build
         run: |
           eas build \
