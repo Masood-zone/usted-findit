@@ -66,5 +66,6 @@ jobs:
         run: |
           eas update \
             --branch preview \
+            --platform android \
             --message "OTA update from GitHub Actions: ${{ github.sha }}" \
             --non-interactive
