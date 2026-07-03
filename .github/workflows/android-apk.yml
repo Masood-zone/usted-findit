@@ -11,6 +11,7 @@ on:
         options:
           - preview
           - development
+
       submit_to_release:
         description: "Attach the APK to a GitHub release for this commit"
         required: true
@@ -21,11 +22,14 @@ jobs:
   build-android-apk:
     name: Build Android APK with EAS
     runs-on: ubuntu-latest
+
     permissions:
       contents: write
+
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -33,12 +37,13 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 11.9.0
+          version: 10
+          run_install: false
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22.x
+          node-version: 22
           cache: pnpm
 
       - name: Setup EAS
@@ -46,7 +51,7 @@ jobs:
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
-          packager: pnpm
+          packager: npm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -71,9 +76,16 @@ jobs:
         run: |
           node <<'NODE'
           const fs = require("fs");
+
           const raw = fs.readFileSync("eas-build.json", "utf8").trim();
+
+          if (!raw) {
+            throw new Error("eas-build.json is empty. EAS did not return build output.");
+          }
+
           const parsed = JSON.parse(raw);
           const build = Array.isArray(parsed) ? parsed[0] : parsed;
+
           const artifactUrl = build?.artifacts?.buildUrl;
           const buildUrl = build?.buildUrl ?? build?.url ?? "";
 
