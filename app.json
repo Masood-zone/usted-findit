@@ -1,0 +1,59 @@
+{
+  "expo": {
+    "name": "USTED FindIt",
+    "slug": "usted-lost-and-found",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/logo.png",
+    "scheme": "ustedfindit",
+    "userInterfaceStyle": "automatic",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "ios": {
+      "icon": "./assets/images/logo.png",
+      "bundleIdentifier": "com.ustedfindit.mobile",
+      "buildNumber": "1"
+    },
+    "android": {
+      "package": "com.ustedfindit.mobile",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#FFF8F7",
+        "foregroundImage": "./assets/images/logo.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "server",
+      "favicon": "./assets/images/logo.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#680029",
+          "android": {
+            "image": "./assets/images/logo.png",
+            "imageWidth": 140
+          }
+        }
+      ],
+      "expo-secure-store",
+      "expo-notifications",
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c9cdc89b-b3fa-42a3-b65f-8a55d14e9e8b"
+      }
+    },
+    "owner": "ustedlostandfounds-team"
+  }
+}

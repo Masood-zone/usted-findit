@@ -1,0 +1,23 @@
+export const queryKeys = {
+  session: ["session"] as const,
+  health: ["health"] as const,
+  userDashboard: ["user-dashboard"] as const,
+  userItems: (filters: unknown) => ["user-items", filters] as const,
+  userItem: (itemId: string) => ["user-item", itemId] as const,
+  userProfile: ["user-profile"] as const,
+  savedItems: ["saved-items"] as const,
+  userReports: ["user-reports"] as const,
+  userReport: (reportId: string) => ["user-report", reportId] as const,
+  possibleMatches: (reportId: string) => ["possible-matches", reportId] as const,
+  userClaims: ["user-claims"] as const,
+  userClaim: (claimId: string) => ["user-claim", claimId] as const,
+  userNotifications: ["user-notifications"] as const,
+  adminDashboard: ["admin-dashboard"] as const,
+  adminReports: (filters: unknown) => ["admin-reports", filters] as const,
+  adminReport: (reportId: string) => ["admin-report", reportId] as const,
+  adminClaims: (status?: unknown) => ["admin-claims", status] as const,
+  adminClaim: (claimId: string) => ["admin-claim", claimId] as const,
+  adminUsers: ["admin-users"] as const,
+  adminUser: (userId: string) => ["admin-user", userId] as const,
+  adminStatistics: ["admin-statistics"] as const
+};
