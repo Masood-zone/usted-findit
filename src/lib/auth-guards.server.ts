@@ -1,12 +1,11 @@
-import { eq } from "drizzle-orm";
+import { and, eq, gt } from "drizzle-orm";
 import { db } from "@/db";
-import { user } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { session, user } from "@/db/schema";
 import { forbiddenResponse, suspendedResponse, unauthorizedResponse } from "@/lib/api-response";
 import type { AppRole, AuthSessionUser } from "@/types/auth";
 
 export type AuthenticatedContext = {
-  session: NonNullable<Awaited<ReturnType<typeof auth.api.getSession>>>;
+  session: typeof session.$inferSelect;
   user: AuthSessionUser;
 };
 
@@ -16,38 +15,59 @@ export class ApiGuardError extends Error {
   }
 }
 
-function getSessionHeaders(headers: Headers) {
-  const sessionHeaders = new Headers(headers);
-  const cookie = sessionHeaders.get("cookie");
-  const forwardedCookie = sessionHeaders.get("x-usted-findit-auth-cookie");
+function parseCookies(value: string | null) {
+  const cookies = new Map<string, string>();
+  if (!value) return cookies;
 
-  if (!cookie && forwardedCookie) {
-    sessionHeaders.set("cookie", forwardedCookie);
+  for (const entry of value.split(";")) {
+    const [name, ...rest] = entry.trim().split("=");
+    if (!name || !rest.length) continue;
+    cookies.set(name, decodeURIComponent(rest.join("=")));
   }
 
-  return sessionHeaders;
+  return cookies;
+}
+
+function getRequestSessionToken(headers: Headers) {
+  const authorization = headers.get("authorization");
+  const bearer = authorization?.match(/^Bearer\s+(.+)$/i)?.[1]?.trim();
+  if (bearer) return bearer;
+
+  const cookieHeader = headers.get("cookie") || headers.get("x-usted-findit-auth-cookie");
+  const cookies = parseCookies(cookieHeader);
+
+  return (
+    cookies.get("better-auth.session_token") ||
+    cookies.get("__Secure-better-auth.session_token") ||
+    cookies.get("better-auth.session-token") ||
+    cookies.get("__Secure-better-auth.session-token") ||
+    null
+  );
 }
 
 export async function getAuthenticatedUser(request: Request): Promise<AuthenticatedContext | null> {
-  const session = await auth.api.getSession({
-    headers: getSessionHeaders(request.headers)
-  });
+  const token = getRequestSessionToken(request.headers);
 
-  if (!session?.user?.id) {
+  if (!token) {
     return null;
   }
 
-  const currentUser = await db.query.user.findFirst({
-    where: eq(user.id, session.user.id)
-  });
+  const row = (
+    await db
+      .select({ session, user })
+      .from(session)
+      .innerJoin(user, eq(session.userId, user.id))
+      .where(and(eq(session.token, token), gt(session.expiresAt, new Date())))
+      .limit(1)
+  )[0];
 
-  if (!currentUser) {
+  if (!row) {
     return null;
   }
 
   return {
-    session,
-    user: currentUser as AuthSessionUser
+    session: row.session,
+    user: row.user as AuthSessionUser
   };
 }
 
