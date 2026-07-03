@@ -1,0 +1,70 @@
+name: EAS OTA Update
+
+on:
+  push:
+    branches:
+      - master
+
+  workflow_dispatch:
+
+jobs:
+  publish-update:
+    name: Publish OTA Update
+    runs-on: ubuntu-latest
+
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+          packager: npm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Check required secrets
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "EXPO_TOKEN is missing or empty"
+            exit 1
+          fi
+
+          if [ -z "$EXPO_PUBLIC_API_URL" ]; then
+            echo "EXPO_PUBLIC_API_URL is missing or empty"
+            exit 1
+          fi
+
+          echo "Required secrets are available"
+
+      - name: Publish OTA update
+        run: |
+          eas update \
+            --branch preview \
+            --message "OTA update from GitHub Actions: ${{ github.sha }}" \
+            --non-interactive
