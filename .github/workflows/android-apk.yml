@@ -1,0 +1,112 @@
+name: Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "EAS build profile to use"
+        required: true
+        default: "preview"
+        type: choice
+        options:
+          - preview
+          - development
+      submit_to_release:
+        description: "Attach the APK to a GitHub release for this commit"
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  build-android-apk:
+    name: Build Android APK with EAS
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: pnpm
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+          packager: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Start EAS APK build
+        run: |
+          eas build \
+            --platform android \
+            --profile "${{ inputs.profile }}" \
+            --non-interactive \
+            --wait \
+            --json > eas-build.json
+
+      - name: Extract APK URL
+        id: build
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+          const raw = fs.readFileSync("eas-build.json", "utf8").trim();
+          const parsed = JSON.parse(raw);
+          const build = Array.isArray(parsed) ? parsed[0] : parsed;
+          const artifactUrl = build?.artifacts?.buildUrl;
+          const buildUrl = build?.buildUrl ?? build?.url ?? "";
+
+          if (!artifactUrl) {
+            console.error(raw);
+            throw new Error("EAS build finished but no APK artifact URL was found.");
+          }
+
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `artifact_url=${artifactUrl}\n`);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `build_url=${buildUrl}\n`);
+          NODE
+
+      - name: Download APK
+        run: |
+          mkdir -p artifacts
+          curl -L "${{ steps.build.outputs.artifact_url }}" -o "artifacts/usted-findit-${{ inputs.profile }}-${{ github.run_number }}.apk"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: usted-findit-${{ inputs.profile }}-apk
+          path: artifacts/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Create GitHub release
+        if: ${{ inputs.submit_to_release }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ inputs.profile }}-${{ github.run_number }}
+          name: "USTED FindIt APK ${{ inputs.profile }} #${{ github.run_number }}"
+          body: |
+            Android APK built with EAS profile `${{ inputs.profile }}`.
+
+            EAS build: ${{ steps.build.outputs.build_url }}
+          files: artifacts/*.apk
