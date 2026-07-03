@@ -15,7 +15,7 @@ jobs:
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
-      EXPO_NO_EXPERIMENTAL_BUNDLE: "1"
+      CI: "1"
 
     steps:
       - name: Checkout repository
@@ -63,10 +63,12 @@ jobs:
 
           echo "Required secrets are available"
 
+      - name: Compile Tailwind CSS for bundler compatibility
+        run: node scripts/compile-css.mjs
+
       - name: Publish OTA update
         run: |
           eas update \
             --branch preview \
             --platform android \
-            --message "OTA update from GitHub Actions: ${{ github.sha }}" \
-            --non-interactive
+            --message "OTA update from GitHub Actions: ${{ github.sha }}"
