@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Pressable,
   type PressableProps,
+  type PressableStateCallbackType,
   View,
 } from "react-native";
 import { AppText } from "./app-text";
@@ -78,7 +79,7 @@ export function AppButton({
           transform: [{ scale: pressed && !isDisabled ? 0.98 : 1 }],
           ...(isPrimary || isDanger ? shadows.sm : {}),
         },
-        typeof style === "function" ? style({ pressed, hovered: false }) : style,
+        typeof style === "function" ? style({ pressed } as PressableStateCallbackType) : style,
       ]}
       {...props}
     >
