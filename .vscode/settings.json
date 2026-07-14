@@ -1,5 +1,5 @@
 {
   "github-actions.workflows.pinned.workflows": [
-    ".github/workflows/android-apk.yml"
+    ".github/workflows/eas-updates.yaml"
   ]
 }
