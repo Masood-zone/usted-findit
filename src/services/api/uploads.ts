@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import * as Linking from "expo-linking";
 import { authClient } from "@/lib/auth-client";
+import { getStoredSessionToken } from "@/lib/auth-session-token";
 import { getApiBaseUrl } from "@/lib/env";
 import type { ApiResponseBody } from "@/types/api";
 import type { UploadedCloudinaryFile, UploadPurpose } from "@/types/reports";
@@ -16,6 +17,7 @@ export type UploadFileInput = {
 
 export async function uploadFileToCloudinary({ file, purpose }: UploadFileInput): Promise<UploadedCloudinaryFile> {
   const cookie = authClient.getCookie();
+  const token = getStoredSessionToken();
   const body = new FormData();
 
   body.append("purpose", purpose);
@@ -29,6 +31,7 @@ export async function uploadFileToCloudinary({ file, purpose }: UploadFileInput)
     body,
     credentials: "omit",
     headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(cookie
         ? {
             cookie,
